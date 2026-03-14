@@ -1,0 +1,162 @@
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.profile-container {
+  display: flex;
+  justify-content: space-between;
+  height: 100vh;
+  width: 100vw;
+  overflow:auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.profile-container ::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for WebKit-based browsers */
+}
+
+
+.profile-left-column,
+.profile-middle-column,
+.profile-right-column {
+  padding: 20px;
+  overflow-y: auto; /* Ensures content can scroll if it overflows the viewport */
+}
+
+.profile-left-column {
+  width: 20%;
+  background-color: #202020;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Space between buttons */
+}
+
+.profile-middle-column {
+  width: 60%;
+  text-align: center;
+  background-color: #111;
+}
+
+.profile-right-column {
+  width: 20%;
+  background-color: #202020;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px; /* Space between buttons */
+}
+
+.profile-button {
+  display: block;
+  margin: 10px 0;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.profile-button.update-profile {
+  width: 140px;
+  height: 25px;
+}
+
+.profile-button.update-password {
+  width: 140px;
+  height: 25px;
+}
+
+.profile-button.update-resume{
+  width: 200px;
+  height: 25px;
+}
+.profile-button.view-resume{
+  width: 200px;
+  height: 45px;
+}
+.resume-section{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 3px;
+}
+
+.profile-button.logout {
+  background-color: #dc3545;
+  width: 180px;
+  height: 45px;
+}
+
+.profile-welcome {
+  margin: 0;
+  font-size: 22px; /* Adjust as needed */
+  font-weight: bold; /* Adjust as needed */
+  background: linear-gradient(45deg, #007bff, white);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.profile-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  margin: 2rem 2rem;
+}
+
+.profile-email { 
+  font-size: 18px; /* Adjust as needed */
+  font-weight: bold; /* Adjust as needed */
+  background: linear-gradient(45deg, blue, white);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.profile-content {
+  padding: 20px;
+  background-color: #202020;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.profile-left-column-buttons {
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(45deg, #007bff, #00d4ff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-left-column-buttons:hover {
+  background: linear-gradient(45deg, #0056b3, #009acd);
+  color:rgb(174, 168, 168);
+  transform: translateY(-2px);
+}
+
+/* .profile-left-column-buttons:active {
+  transform: translateY(1px);
+  color:rgb(174, 168, 168);
+  background-color: linear-gradient(45deg, #004690, #00d4ff);;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+} */
+
+/* Active button style */
+.profile-left-column-buttons.active {
+  background: linear-gradient(45deg, #013368, #00d4ff);
+  color: #ffffff;
+}

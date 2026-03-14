@@ -1,0 +1,1240 @@
+{% extends "base_interview.html" %}
+
+{% block title %}Interview Room - Question {{ question_num }}{% endblock %}
+
+{% block content %}
+<div class="interview-container">
+    <!-- Header -->
+    <header class="interview-header">
+        <div class="header-left">
+            <h2>Rishi Interview Session</h2>
+            <div class="header-meta">
+                <p>Question {{ question_num }} of {{ total_questions }}</p>
+                <div id="answerTimer" class="timer-badge">⏱️ 30s</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="skipBtn" class="btn btn-secondary">⏭️ Skip Question</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Video/AI Section -->
+        <section class="visual-section">
+            <div class="video-wrapper">
+                <!-- Robot Animation - Primary Visual -->
+                <div id="robotAnimation" class="robot-animation">
+                    <div class="robot-container">
+                        <div class="robot-head">
+                            <div class="robot-eyes">
+                                <div class="robot-eye left-eye"></div>
+                                <div class="robot-eye right-eye"></div>
+                            </div>
+                            <div class="robot-mouth"></div>
+                        </div>
+                        <div class="robot-body">
+                            <div class="robot-chest">
+                                <div class="robot-screen">
+                                    <div class="screen-content">
+                                        <div class="screen-text">RISHI</div>
+                                        <div class="screen-pulse"></div>
+                                        <div class="ai-avatar-core">
+                                            <div class="pulse-ring"></div>
+                                            <div class="core"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="robot-arms">
+                                <div class="robot-arm left-arm"></div>
+                                <div class="robot-arm right-arm"></div>
+                            </div>
+                        </div>
+                        <div class="robot-base">
+                            <div class="robot-legs">
+                                <div class="robot-leg left-leg"></div>
+                                <div class="robot-leg right-leg"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="robot-glow"></div>
+                </div>
+
+                <!-- Picture-in-Picture Mini Camera -->
+                <div class="pip-camera">
+                    <video id="userVideo" autoplay muted playsinline></video>
+                    <div id="cameraPlaceholder" class="placeholder">
+                        <div class="loader-small"></div>
+                    </div>
+                    <div class="pip-label">YOU</div>
+                </div>
+
+                <!-- Physical Analysis Indicator Panel -->
+                <div id="physicalAnalysisPanel" class="analysis-panel">
+                    <div class="analysis-header">📊 AI Real-time Analysis</div>
+
+                    <div class="live-status-row">
+                        <div class="status-badge" id="liveEmotion">
+                            <span class="dot"></span> Emotion: <span id="emotionVal">Neutral</span>
+                        </div>
+                        <div class="status-badge" id="physicalStatus">
+                            <span class="dot"></span> Status: <span id="statusVal">Ready</span>
+                        </div>
+                    </div>
+
+                    <div id="securityAlerts" class="security-alerts" style="display: none;">
+                        <div class="alert-title">⚠️ SECURITY ALERT</div>
+                        <ul id="violationsList"></ul>
+                    </div>
+
+                    <div class="analysis-item">
+                        <div class="analysis-label">Confidence</div>
+                        <div class="analysis-bar-container">
+                            <div id="confidenceBar" class="analysis-bar"></div>
+                        </div>
+                        <div id="confidenceValue" class="analysis-value">--/10</div>
+                    </div>
+
+                    <div class="analysis-item">
+                        <div class="analysis-label">Voice</div>
+                        <div class="analysis-bar-container">
+                            <div id="voiceBar" class="analysis-bar"></div>
+                        </div>
+                        <div id="voiceValue" class="analysis-value">--/10</div>
+                    </div>
+
+                    <div class="analysis-item">
+                        <div class="analysis-label">Body Language</div>
+                        <div class="analysis-bar-container">
+                            <div id="bodyLanguageBar" class="analysis-bar"></div>
+                        </div>
+                        <div id="bodyLanguageValue" class="analysis-value">--/10</div>
+                    </div>
+
+                    <div class="analysis-footer">
+                        <span>Overall:</span>
+                        <span id="physicalScoreValue" class="overall-score">--/10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-speech-zone">
+                <div class="ai-avatar">🤖</div>
+                <div class="speech-bubble">
+                    <p id="questionText">{{ question.question if question else "Generating question..." }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Response Section -->
+        <section class="response-section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h3>💬 Chatbot Response</h3>
+                    <p>Type your answer below or use the microphone.</p>
+                </div>
+
+                <form id="answerForm">
+                    <textarea id="answerInput" name="answer" placeholder="Rishi is waiting for your response..."
+                        required></textarea>
+
+                    <div class="controls">
+                        <button type="button" id="voiceBtn" class="btn btn-voice">🎤 Speak Answer</button>
+                        <button type="submit" class="btn btn-primary">Submit Answer 📤</button>
+                    </div>
+                </form>
+
+                <div id="statusMsg" class="status-msg"></div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Loading Overlay for submission -->
+<div id="submitOverlay" class="overlay" style="display: none;">
+    <div class="spinner"></div>
+    <p>Rishi is analyzing...</p>
+</div>
+
+<!-- Thank You Overlay -->
+<div id="thankYouOverlay" class="overlay" style="display: none;">
+    <div class="thank-you-card">
+        <div class="success-icon">🎉</div>
+        <h2>Interview Completed!</h2>
+        <p>Thank you for participating. Rishi is summarizing your final score...</p>
+        <div class="loader"></div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary: #667eea;
+        --secondary: #764ba2;
+        --bg-dark: #121212;
+        --card-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: #0f0f1f;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+    }
+
+    .interview-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .interview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .interview-header h2 {
+        margin: 0;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 5px;
+    }
+
+    .header-meta p {
+        margin: 0;
+        color: #888;
+    }
+
+    .timer-badge {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        font-family: 'Mono', monospace;
+    }
+
+    .timer-badge.warning {
+        background: rgba(255, 118, 117, 0.2);
+        color: #ff7675;
+        border-color: rgba(255, 118, 117, 0.3);
+        animation: pulse 1s infinite;
+    }
+
+    .main-layout {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 20px;
+        margin-top: 20px;
+        min-height: 0;
+        /* Important for flex child */
+    }
+
+    .visual-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .video-wrapper {
+        flex: 1;
+        background: #0a0a1a;
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid var(--glass-border);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Robot Animation Styles */
+    .robot-animation {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a1a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+
+    .robot-container {
+        position: relative;
+        width: 180px;
+        height: 280px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 2;
+    }
+
+    .robot-head {
+        width: 100px;
+        height: 90px;
+        background: linear-gradient(135deg, #4facfe, #00f2fe);
+        border-radius: 50% 50% 35% 35%;
+        position: relative;
+        margin-bottom: 8px;
+        box-shadow: 0 0 20px rgba(79, 172, 254, 0.4);
+        transition: transform 0.3s ease;
+    }
+
+    .robot-eyes {
+        display: flex;
+        justify-content: space-around;
+        width: 70px;
+        margin: 25px auto 0;
+    }
+
+    .robot-eye {
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #fff;
+        position: relative;
+        animation: blink 4s infinite;
+    }
+
+    .robot-mouth {
+        width: 30px;
+        height: 6px;
+        background: #1a1a2e;
+        border-radius: 10px;
+        margin: 15px auto 0;
+        transition: all 0.2s;
+    }
+
+    /* Speaking State */
+    .robot-animation.robot-speaking .robot-mouth {
+        height: 15px;
+        border-radius: 50%;
+        animation: talk 0.3s infinite alternate;
+    }
+
+    .robot-animation.robot-speaking .robot-head {
+        transform: translateY(-5px);
+    }
+
+    @keyframes talk {
+        from {
+            height: 5px;
+        }
+
+        to {
+            height: 15px;
+        }
+    }
+
+    @keyframes blink {
+
+        0%,
+        90%,
+        100% {
+            transform: scaleY(1);
+        }
+
+        95% {
+            transform: scaleY(0.1);
+        }
+    }
+
+    .robot-body {
+        width: 120px;
+        height: 130px;
+        background: #2c3e50;
+        border-radius: 15px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .robot-chest {
+        width: 90px;
+        height: 70px;
+        background: #1a1a2e;
+        border-radius: 10px;
+        margin: 12px auto;
+        border: 2px solid rgba(79, 172, 254, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .robot-screen {
+        text-align: center;
+        color: #00f2fe;
+        font-family: 'Courier New', monospace;
+        font-size: 10px;
+        position: relative;
+    }
+
+    .screen-pulse {
+        width: 100%;
+        height: 2px;
+        background: #00f2fe;
+        margin-top: 5px;
+        animation: scan 2s infinite linear;
+    }
+
+    @keyframes scan {
+        0% {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+
+        50% {
+            opacity: 1;
+        }
+
+        100% {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+    }
+
+    .robot-arms {
+        position: absolute;
+        width: 160px;
+        display: flex;
+        justify-content: space-between;
+        top: 20px;
+        left: -20px;
+    }
+
+    .robot-arm {
+        width: 15px;
+        height: 80px;
+        background: #34495e;
+        border-radius: 10px;
+        transform-origin: top center;
+        animation: swing 3s infinite ease-in-out;
+    }
+
+    .robot-base {
+        width: 140px;
+        height: 30px;
+        background: #1a1a2e;
+        border-radius: 20px;
+        margin-top: -10px;
+    }
+
+    .robot-glow {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(79, 172, 254, 0.1) 0%, transparent 70%);
+        animation: glow 4s infinite alternate;
+    }
+
+    @keyframes glow {
+        from {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+
+        to {
+            transform: scale(1.2);
+            opacity: 0.6;
+        }
+    }
+
+    /* PIP Camera Styles */
+    .pip-camera {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 160px;
+        height: 120px;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #fff;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        z-index: 10;
+        transition: all 0.3s ease;
+    }
+
+    .pip-camera:hover {
+        transform: scale(1.1);
+        border-color: var(--primary);
+    }
+
+    .pip-camera video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .pip-label {
+        position: absolute;
+        bottom: 5px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+    }
+
+    .placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #1a1a2e;
+    }
+
+    .loader-small {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1s infinite linear;
+    }
+
+    .ai-speech-zone {
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 20px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        backdrop-filter: blur(10px);
+    }
+
+    .ai-avatar {
+        font-size: 40px;
+    }
+
+    .speech-bubble {
+        flex: 1;
+    }
+
+    .speech-bubble p {
+        margin: 0;
+        font-size: 1.2rem;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
+    .response-section {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-container {
+        flex: 1;
+        background: var(--card-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        min-height: 500px;
+    }
+
+    .chat-header h3 {
+        margin: 0;
+        color: var(--primary);
+    }
+
+    .chat-header p {
+        margin: 5px 0 20px;
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    #answerForm {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        min-height: 0;
+    }
+
+    #answerInput {
+        flex: 2;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        padding: 15px;
+        color: white;
+        font-size: 1rem;
+        resize: none;
+        outline: none;
+        transition: border-color 0.3s;
+        min-height: 100px;
+    }
+
+    #answerInput:focus {
+        border-color: var(--primary);
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.2s;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid var(--glass-border);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-voice {
+        background: #2d3436;
+        color: white;
+        border: 1px solid #636e72;
+    }
+
+    .btn-voice.active {
+        background: #d63031;
+        border-color: #ff7675;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .status-msg {
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #aaa;
+        text-align: center;
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .thank-you-card {
+        background: #1a1a2e;
+        padding: 40px;
+        border-radius: 25px;
+        text-align: center;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        max-width: 400px;
+        animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .success-icon {
+        font-size: 50px;
+        margin-bottom: 20px;
+    }
+
+    .thank-you-card h2 {
+        margin-bottom: 15px;
+        color: var(--primary);
+    }
+
+    .thank-you-card p {
+        color: #888;
+        margin-bottom: 25px;
+    }
+
+    /* Physical Analysis Panel Styles */
+    .analysis-panel {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        width: 200px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 15px;
+        padding: 12px;
+        z-index: 100;
+        font-size: 0.8rem;
+    }
+
+    .analysis-header {
+        font-weight: 700;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid var(--glass-border);
+        text-align: center;
+        color: var(--primary);
+    }
+
+    .analysis-item {
+        margin-bottom: 8px;
+    }
+
+    .analysis-label {
+        color: #aaa;
+        margin-bottom: 3px;
+    }
+
+    .analysis-bar-container {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 2px;
+    }
+
+    .analysis-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        transition: width 0.5s ease-out;
+    }
+
+    .analysis-value {
+        text-align: right;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .live-status-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .status-badge {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s;
+    }
+
+    .status-badge .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #00b894;
+        box-shadow: 0 0 5px #00b894;
+    }
+
+    .status-badge.warning .dot {
+        background: #fdcb6e;
+        box-shadow: 0 0 5px #fdcb6e;
+    }
+
+    .status-badge.danger .dot {
+        background: #ff7675;
+        box-shadow: 0 0 5px #ff7675;
+    }
+
+    .analysis-footer {
+        margin-top: 10px;
+        padding-top: 5px;
+        border-top: 1px solid var(--glass-border);
+        display: flex;
+        justify-content: space-between;
+        font-weight: 700;
+    }
+
+    .overall-score {
+        color: #00ffcc;
+    }
+
+    .score-high {
+        color: #00ffcc;
+    }
+
+    .score-medium {
+        color: #ffcc00;
+    }
+
+    .score-low {
+        color: #ff6666;
+    }
+
+    .security-alerts {
+        background: rgba(255, 71, 87, 0.2);
+        border: 1px solid #ff4757;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 15px;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    .alert-title {
+        color: #ff4757;
+        font-weight: 800;
+        font-size: 0.75rem;
+        margin-bottom: 5px;
+        text-align: center;
+    }
+
+    .security-alerts ul {
+        margin: 0;
+        padding-left: 15px;
+        color: #ff7675;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    @keyframes shake {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .main-layout {
+            grid-template-columns: 1fr;
+            overflow-y: auto;
+        }
+
+        .interview-container {
+            height: auto;
+        }
+
+        .video-wrapper {
+            height: 300px;
+        }
+    }
+</style>
+
+<script>
+    // Physical Analysis Manager
+    class PhysicalAnalysisManager {
+        constructor(videoElement, mediaStream) {
+            this.videoElement = videoElement;
+            this.mediaStream = mediaStream;
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.mediaRecorder = null;
+            this.audioChunks = [];
+            this.isCollecting = false;
+            this.frameInterval = null;
+            this.analysisInterval = 3000; // 3 seconds matching config
+
+            this.initialize();
+        }
+
+        initialize() {
+            try {
+                // Audio recording for tone/confidence analysis
+                this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType: 'audio/webm' });
+                this.mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) this.sendAudioData(e.data);
+                };
+            } catch (e) {
+                console.warn('Audio recorder init failed:', e);
+            }
+        }
+
+        start() {
+            if (this.isCollecting) return;
+            this.isCollecting = true;
+            this.frameInterval = setInterval(() => this.captureFrame(), this.analysisInterval);
+
+            if (this.mediaRecorder) {
+                this.mediaRecorder.start(this.analysisInterval);
+            }
+            console.log("🚀 Enhanced Physical analysis started.");
+        }
+
+        stop() {
+            this.isCollecting = false;
+            clearInterval(this.frameInterval);
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                this.mediaRecorder.stop();
+            }
+        }
+
+        captureFrame() {
+            if (!this.videoElement || !this.ctx) return;
+            this.canvas.width = this.videoElement.videoWidth || 640;
+            this.canvas.height = this.videoElement.videoHeight || 480;
+            this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+            const frameData = this.canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+            this.sendData(frameData, null);
+        }
+
+        async sendAudioData(blob) {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+                const base64Audio = reader.result.split(',')[1];
+                this.sendData(null, base64Audio);
+            };
+        }
+
+        async sendData(vFrame, aSegment) {
+            const formData = new FormData();
+            if (vFrame) formData.append('video_frame', vFrame);
+            if (aSegment) formData.append('audio_segment', aSegment);
+
+            try {
+                const resp = await fetch('/update_physical_analysis', { method: 'POST', body: formData });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.success) this.updateUI(data.current_analysis);
+                }
+            } catch (e) { console.error("Analysis sync error:", e); }
+        }
+
+        updateUI(data) {
+            const currentAnalysis = data.current_analysis;
+            const update = (id, barId, val) => {
+                const el = document.getElementById(id);
+                const bar = document.getElementById(barId);
+                if (el) el.innerText = `${val.toFixed(1)}/10`;
+                if (bar) bar.style.width = `${(val / 10) * 100}%`;
+
+                if (el) {
+                    el.classList.remove('score-high', 'score-medium', 'score-low');
+                    if (val >= 7) el.classList.add('score-high');
+                    else if (val >= 5) el.classList.add('score-medium');
+                    else el.classList.add('score-low');
+                }
+            };
+
+            update('confidenceValue', 'confidenceBar', currentAnalysis.confidence);
+            update('voiceValue', 'voiceBar', currentAnalysis.voice_quality);
+            update('bodyLanguageValue', 'bodyLanguageBar', currentAnalysis.body_language);
+
+            const overall = document.getElementById('physicalScoreValue');
+            if (overall) overall.innerText = `${currentAnalysis.overall_physical_score.toFixed(1)}/10`;
+
+            // Update Real-time Emotion
+            const emotionVal = document.getElementById('emotionVal');
+            if (emotionVal) emotionVal.innerText = data.latest_emotion || "Neutral";
+
+            // Update Physical Status
+            const statusVal = document.getElementById('statusVal');
+            const physicalStatusBadge = document.getElementById('physicalStatus');
+            if (statusVal && physicalStatusBadge) {
+                let status = "Face Detected";
+                physicalStatusBadge.classList.remove('warning', 'danger');
+
+                if (data.phone_detected) {
+                    status = "Phone Detected!";
+                    physicalStatusBadge.classList.add('danger');
+                } else if (data.person_count > 1) {
+                    status = "Multi-Person!";
+                    physicalStatusBadge.classList.add('warning');
+                } else if (data.person_count === 0) {
+                    status = "No Face Detected";
+                    physicalStatusBadge.classList.add('warning');
+                }
+                statusVal.innerText = status;
+            }
+
+            // Update security alerts
+            const alertBox = document.getElementById('securityAlerts');
+            const violationsList = document.getElementById('violationsList');
+            if (alertBox && violationsList) {
+                if (currentAnalysis.violations && currentAnalysis.violations.length > 0) {
+                    violationsList.innerHTML = '';
+                    currentAnalysis.violations.forEach(v => {
+                        const li = document.createElement('li');
+                        li.innerText = v;
+                        violationsList.appendChild(li);
+                    });
+                    alertBox.style.display = 'block';
+                } else {
+                    alertBox.style.display = 'none';
+                }
+            }
+        }
+    }
+
+    // Simplified Logic
+    document.addEventListener('DOMContentLoaded', async () => {
+        const video = document.getElementById('userVideo');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const answerInput = document.getElementById('answerInput');
+        const answerForm = document.getElementById('answerForm');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        const statusMsg = document.getElementById('statusMsg');
+        const questionText = document.getElementById('questionText').innerText;
+        let physicalManager = null;
+
+        // 1. Setup Camera
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            video.srcObject = stream;
+            placeholder.style.display = 'none';
+
+            // Initialize Physical Manager
+            physicalManager = new PhysicalAnalysisManager(video, stream);
+            physicalManager.start();
+        } catch (err) {
+            console.error("Camera Error:", err);
+            placeholder.innerHTML = "<div class='loader-small' style='border-top-color:#ff7675'></div>";
+            statusMsg.innerText = "Camera access denied. Evaluation will only include text/voice.";
+        }
+
+        // 2. TTS - Speak Question
+        function speak(text) {
+            const synth = window.speechSynthesis;
+            const utter = new SpeechSynthesisUtterance(text);
+            const robot = document.getElementById('robotAnimation');
+
+            utter.onstart = () => {
+                statusMsg.innerText = "Rishi is speaking...";
+                if (robot) robot.classList.add('robot-speaking');
+            };
+
+            utter.onend = () => {
+                statusMsg.innerText = "Ready for your answer.";
+                if (robot) robot.classList.remove('robot-speaking');
+            };
+
+            synth.speak(utter);
+        }
+
+        if (questionText && questionText !== "Generating question...") {
+            speak(questionText);
+        }
+
+        // 3. Voice Recognition (Simplified)
+        let recognition;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRec();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                answerInput.value = transcript;
+            };
+
+            recognition.onerror = (e) => {
+                console.error("Speech Rec Error:", e);
+                voiceBtn.classList.remove('active');
+            };
+        }
+
+        voiceBtn.addEventListener('click', () => {
+            if (!recognition) {
+                alert("Voice recognition not supported in this browser.");
+                return;
+            }
+            if (voiceBtn.classList.contains('active')) {
+                recognition.stop();
+                voiceBtn.classList.remove('active');
+                voiceBtn.innerText = "🎤 Speak Answer";
+            } else {
+                recognition.start();
+                voiceBtn.classList.add('active');
+                voiceBtn.innerText = "⏹️ Stop Listening";
+            }
+        });
+
+        // 4. Form Submission
+        answerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const answer = answerInput.value.trim();
+            if (!answer) return;
+
+            // Stop timer while submitting
+            if (window.answerTimerInterval) clearInterval(window.answerTimerInterval);
+
+            document.getElementById('submitOverlay').style.display = 'flex';
+
+            try {
+                const formData = new FormData(answerForm);
+                const resp = await fetch('/submit_answer', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await resp.json();
+                if (data.completed) {
+                    // STOP MEDIA
+                    if (physicalManager) physicalManager.stop();
+                    if (video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                    }
+
+                    document.getElementById('submitOverlay').style.display = 'none';
+                    document.getElementById('thankYouOverlay').style.display = 'flex';
+
+                    setTimeout(() => {
+                        window.location.href = '/results';
+                    }, 3000);
+                } else {
+                    location.reload(); // Simple next question strategy
+                }
+            } catch (err) {
+                console.error("Submit Error:", err);
+                alert("Failed to submit. Please try again.");
+                document.getElementById('submitOverlay').style.display = 'none';
+                startTimer(); // Resume timer on error
+            }
+        });
+
+        // 5. Skip Logic
+        skipBtn.addEventListener('click', async () => {
+            if (confirm("Skip this question?")) {
+                answerInput.value = "[Skipped]";
+                answerForm.requestSubmit();
+            }
+        });
+
+        // 6. 30-Second Timer Logic
+        const timerBadge = document.getElementById('answerTimer');
+        let timeLeft = 30;
+
+        function startTimer() {
+            timeLeft = 30;
+            timerBadge.innerText = `⏱️ ${timeLeft}s`;
+            timerBadge.classList.remove('warning');
+
+            window.answerTimerInterval = setInterval(() => {
+                timeLeft--;
+                timerBadge.innerText = `⏱️ ${timeLeft}s`;
+
+                if (timeLeft <= 10) timerBadge.classList.add('warning');
+
+                if (timeLeft <= 0) {
+                    clearInterval(window.answerTimerInterval);
+                    answerInput.value = answerInput.value || "[Time Up - No Response]";
+                    answerForm.requestSubmit();
+                }
+            }, 1000);
+        }
+
+        // Delay timer start until after Rishi speaks (approx 3 seconds)
+        setTimeout(startTimer, 3000);
+
+        // 7. Security: Tab Switching Detection
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.warn('🚫 Security Violation: Tab switched or window minimized.');
+                // Stop any recording/analysis
+                if (physicalManager) physicalManager.stop();
+                if (window.answerTimerInterval) clearInterval(window.answerTimerInterval);
+
+                // Redirect to cancellation page
+                window.location.href = '/cancel_interview';
+            }
+        });
+    });
+</script>
+{% endblock %}

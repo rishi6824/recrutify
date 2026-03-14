@@ -1,0 +1,41 @@
+.separator-line {
+    width: 100%; /* Full width */
+    border: none; /* Remove default border */
+    border-top: 1px solid #ccc; /* Add a light gray line */
+    margin: 10px 0; /* Space above and below the line */
+}
+
+.input-bar {
+    display: flex;
+    flex-direction: column;
+    min-width: 500px;
+    color: white;
+    width: 100%; /* Make sure the input bar spans full width */
+}
+
+.image-wrapper {
+    position: relative;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 0, 0, 0.5); /* Red overlay for delete */
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.3s;
+}
+
+.image-wrapper:hover .overlay {
+    opacity: 1; /* Show overlay on hover */
+}
+
+.delete-icon {
+    color: white; /* Change icon color to white for better contrast */
+    cursor: pointer;
+}

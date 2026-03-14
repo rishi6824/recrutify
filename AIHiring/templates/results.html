@@ -1,0 +1,344 @@
+{% extends "base_interview.html" %}
+
+{% block title %}Thank You - Interview Complete{% endblock %}
+
+{% block content %}
+<div class="thank-you-container">
+    <div class="container">
+        <div class="thank-you-card">
+            <div class="thank-you-animation">
+                <div class="checkmark-circle">
+                    <div class="checkmark"></div>
+                </div>
+            </div>
+
+            <h2>Thank You, {{ candidate_name }}!</h2>
+            <p>Your interview has been completed successfully.</p>
+            <p>Your responses have been recorded and will be reviewed by our team.</p>
+
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .thank-you-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .thank-you-card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+    }
+
+
+    .thank-you-animation {
+        margin-bottom: 2rem;
+    }
+
+    .checkmark-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #4CAF50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        animation: checkmark 0.8s ease-in-out;
+    }
+
+    .checkmark {
+        width: 30px;
+        height: 15px;
+        border: solid white;
+        border-width: 0 0 3px 3px;
+        transform: rotate(-45deg);
+        animation: draw-check 0.5s ease-in-out 0.3s both;
+    }
+
+    @keyframes checkmark {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        50% {
+            transform: scale(1.2);
+            opacity: 0.8;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @keyframes draw-check {
+        0% {
+            width: 0;
+            opacity: 0;
+        }
+
+        100% {
+            width: 30px;
+            opacity: 1;
+        }
+    }
+
+    .thank-you-card h2 {
+        color: #333;
+        margin-bottom: 1rem;
+        font-size: 2rem;
+    }
+
+    .thank-you-card p {
+        color: #7f8c8d;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .action-buttons {
+        margin-top: 2rem;
+    }
+
+    /* Behavioral Summary Styles */
+    .result-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .stat-item {
+        background: #f8f9fa;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #667eea;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .behavioral-summary {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid #eee;
+        text-align: left;
+    }
+
+    .behavioral-summary h3 {
+        font-size: 1.4rem;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    .behavior-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    .behavior-item {
+        display: grid;
+        grid-template-columns: 140px 1fr 60px;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .behavior-label {
+        font-size: 0.9rem;
+        color: #666;
+        font-weight: 600;
+    }
+
+    .behavior-progress {
+        height: 8px;
+        background: #edf2f7;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 4px;
+        transition: width 1s ease-out;
+        width: var(--width, 0%);
+    }
+
+    .behavior-value {
+        font-weight: 700;
+        font-size: 1rem;
+        text-align: right;
+        color: #333;
+    }
+
+    .text-confidence {
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+
+    /* Emotion Profile Styles */
+    .emotion-profile {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #fdfbff;
+        border-radius: 12px;
+        border: 1px solid #e0e0ff;
+    }
+
+    .emotion-profile h4 {
+        margin-bottom: 0.5rem;
+        color: #4a4a8a;
+    }
+
+    .emotion-desc {
+        font-size: 0.85rem;
+        color: #777;
+        margin-bottom: 1.2rem !important;
+    }
+
+    .emotion-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+    }
+
+    .emotion-tag {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .emotion-name {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #555;
+    }
+
+    .emotion-mini-bar {
+        height: 4px;
+        background: #f0f0f0;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .mini-fill {
+        height: 100%;
+        background: #667eea;
+        width: var(--width, 0%);
+    }
+
+    .emotion-percent {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #667eea;
+        text-align: right;
+    }
+
+    .security-summary {
+        margin-top: 2rem;
+        background: #fff5f5;
+        padding: 1.2rem;
+        border-radius: 10px;
+        border-left: 4px solid #f56565;
+    }
+
+    .security-warning {
+        color: #c53030 !important;
+        font-weight: 700;
+        margin-bottom: 0.5rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    .violation-list {
+        margin: 0;
+        padding-left: 1.2rem;
+        color: #c53030;
+        font-size: 0.85rem;
+    }
+
+    .violation-list li {
+        margin-bottom: 0.2rem;
+    }
+</style>
+
+<script>
+    // Clean up any remaining media streams when results page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🎉 Thank you page loaded - cleaning up any remaining media streams...');
+
+
+        // Stop all video streams
+        const videos = document.querySelectorAll('video');
+        videos.forEach(video => {
+            if (video.srcObject) {
+                const stream = video.srcObject;
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('✅ Stopped video track:', track.kind);
+                });
+                video.srcObject = null;
+            }
+        });
+
+        // Stop any audio contexts from voice recognition
+        if (typeof voiceRecognition !== 'undefined') {
+            if (voiceRecognition.mediaStream) {
+                voiceRecognition.mediaStream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('✅ Stopped voice recognition track:', track.kind);
+                });
+                voiceRecognition.mediaStream = null;
+            }
+
+            if (voiceRecognition.audioContext) {
+                voiceRecognition.audioContext.close().then(() => {
+                    console.log('✅ Audio context closed');
+                }).catch(err => {
+                    console.error('Error closing audio context:', err);
+                });
+            }
+
+            // Stop listening if active
+            voiceRecognition.stopListening();
+        }
+
+        // Stop text-to-speech if available
+        if (typeof textToSpeech !== 'undefined') {
+            textToSpeech.stop();
+        }
+
+        // Clear permission storage for next interview
+        sessionStorage.removeItem('cameraMicPermissions');
+
+        console.log('✅ Cleanup complete - all media streams stopped');
+    });
+</script>
+{% endblock %}
