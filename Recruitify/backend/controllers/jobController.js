@@ -7,6 +7,39 @@ const fetchJobsBySkills = require("../graph_database/fetch_jobs.js");
 const createJobSkillRelation = require("../graph_database/create_job_skill.js");
 const addJobDataToVDB = require("../vector_database/addJobData.js");
 const { index } = require("../vector_database/connectVectorDB.js");
+const sendEmail = require("../utils/sendEmail");
+
+const sendEmailToCandidate = async ({
+  candidate,
+  job,
+  owner,
+  interviewLink,
+  customMessage,
+  customSubject,
+}) => {
+  const subject =
+    customSubject ||
+    `Interview Invitation: ${job.jobRole} at ${job.company || "our company"}`;
+
+  const text = [
+    `Hi ${candidate.name || "Candidate"},`,
+    "",
+    `You are invited to interview for the role of ${job.jobRole}${job.company ? ` at ${job.company}` : ""}.`,
+    interviewLink ? `Interview Link: ${interviewLink}` : "",
+    customMessage || "Please join the interview using the link above.",
+    "",
+    `Regards,`,
+    owner?.name || "Recruitify Team",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  await sendEmail({
+    to: candidate.email,
+    subject,
+    text,
+  });
+};
 exports.createJobForms = catchAsyncErrors(async (req, res) => {
   try {
     const userId = req.user._id;
@@ -121,19 +154,11 @@ exports.fetchAllJobForms = catchAsyncErrors(async (req, res) => {
     const userId = req.user._id;
 
     const userAuth = await Userauth.findById(userId);
-
-    let allJobIdsSet = new Set();
-
-    let randomJobs = [];
-    if (userAuth.jobBySkills.length + userAuth.jobRecommendations.length < 5) {
-      const fetchRandomJobs = await JobApplicationForm.find();
-      if (!fetchRandomJobs || fetchRandomJobs.length === 0) {
-        return res.status(404).json({ error: "No jobs found" });
-      }
-      randomJobs = fetchRandomJobs.sort(() => 0.5 - Math.random()).slice(0, 5);
-      randomJobs.forEach((job) => allJobIdsSet.add(job._id));
+    if (!userAuth) {
+      return res.status(404).json({ error: "User not found" });
     }
 
+    // Keep recommendation data fresh in background, but do not restrict job list.
     let recommendationStale = true;
     if (userAuth.recommendationBySkillFetchedAt) {
       recommendationStale =
@@ -146,28 +171,12 @@ exports.fetchAllJobForms = catchAsyncErrors(async (req, res) => {
         userAuth.jobBySkills = matchedJobIds;
         userAuth.recommendationBySkillFetchedAt = new Date();
         await userAuth.save();
-        console.log("Fetched jobs from Neo4j");
       } catch (error) {
         console.error("Error fetching jobs:", error);
       }
-    } else {
-      console.log("Recommendation is still fresh, no need to fetch jobs.");
     }
 
-    userAuth.jobBySkills.map((jobId) => allJobIdsSet.add(jobId));
-    userAuth.jobRecommendations.map((rec) => allJobIdsSet.add(rec.id));
-
-    const allJobIds = Array.from(allJobIdsSet);
-
-    if (!allJobIds || allJobIds.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No jobs found for the user's skills" });
-    }
-
-    let jobForms = await JobApplicationForm.find()
-      .where("_id")
-      .in(allJobIds)
+    const jobForms = await JobApplicationForm.find()
       .select("_id jobRole jobLocation company requiredSkills")
       .populate({
         path: "requiredSkills",
@@ -180,26 +189,13 @@ exports.fetchAllJobForms = catchAsyncErrors(async (req, res) => {
         path: "applicantProfiles.userId",
         select: "_id name avatar.filePath",
       })
-      .sort({ timestamp: 1 });
+      .sort({ timestamp: -1 });
 
     if (!jobForms || jobForms.length === 0) {
       return res.status(404).json({ error: "Jobs not found" });
     }
 
-    //filter random jobs from job forms
-    const nonRandomJobForms = jobForms.filter((job) => {
-      return randomJobs.some((randomJob) => !randomJob._id.equals(job._id));
-    });
-    // now take all jobs those are not in nonRandomJobForms
-    const RandomJobForms = jobForms.filter((job) => {
-      return !nonRandomJobForms.some(
-        (nonRandomJob) => !nonRandomJob._id.equals(job._id)
-      );
-    });
-
-    const finalJobForms = [...nonRandomJobForms, ...RandomJobForms];
-
-    res.status(200).json(finalJobForms);
+    res.status(200).json(jobForms);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
@@ -315,10 +311,14 @@ exports.applyForJob = catchAsyncErrors(async (req, res) => {
       return res.status(404).json({ error: "Job application form not found" });
     }
 
-    if (jobApplicationForm.ownerProfile.equals(userId)) {
-      return res
-        .status(400)
-        .json({ error: "You cannot apply to your own job" });
+    const ownerId = String(jobApplicationForm.ownerProfile);
+    const applicantId = String(userId);
+    if (ownerId === applicantId) {
+      return res.status(400).json({
+        error: "You cannot apply to your own job",
+        ownerId,
+        applicantId,
+      });
     }
     const hasApplied = jobApplicationForm.applicantProfiles.some((applicant) =>
       applicant.userId.equals(userId)
@@ -461,5 +461,70 @@ exports.chatWithAi = catchAsyncErrors(async (req, res) => {
   res.status(200).json({
     question,
     response,
+  });
+});
+
+exports.inviteCandidatesForInterview = catchAsyncErrors(async (req, res) => {
+  const { formId } = req.params;
+  const { interviewLink, message, subject } = req.body || {};
+
+  if (!formId) {
+    return res.status(400).json({ error: "formId is required" });
+  }
+
+  const jobApplicationForm = await JobApplicationForm.findById(formId)
+    .populate({ path: "ownerProfile", select: "_id name email" })
+    .populate({ path: "applicantProfiles.userId", select: "_id name email" });
+
+  if (!jobApplicationForm) {
+    return res.status(404).json({ error: "Job application form not found" });
+  }
+
+  if (!jobApplicationForm.ownerProfile?._id?.equals(req.user._id)) {
+    return res
+      .status(403)
+      .json({ error: "You are not authorized to invite candidates" });
+  }
+
+  const candidates = (jobApplicationForm.applicantProfiles || [])
+    .map((profile) => profile.userId)
+    .filter((user) => user && user.email);
+
+  if (!candidates.length) {
+    return res.status(400).json({ error: "No candidates found for this job" });
+  }
+
+  const uniqueCandidates = Array.from(
+    new Map(candidates.map((candidate) => [candidate.email, candidate])).values()
+  );
+
+  const mailResults = await Promise.allSettled(
+    uniqueCandidates.map((candidate) =>
+      sendEmailToCandidate({
+        candidate,
+        job: jobApplicationForm,
+        owner: jobApplicationForm.ownerProfile,
+        interviewLink,
+        customMessage: message,
+        customSubject: subject,
+      })
+    )
+  );
+
+  const failed = [];
+  mailResults.forEach((result, index) => {
+    if (result.status === "rejected") {
+      failed.push({
+        email: uniqueCandidates[index].email,
+        reason: result.reason?.message || "Failed to send",
+      });
+    }
+  });
+
+  return res.status(200).json({
+    success: true,
+    invitedCount: uniqueCandidates.length - failed.length,
+    totalCandidates: uniqueCandidates.length,
+    failed,
   });
 });

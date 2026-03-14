@@ -11,6 +11,7 @@ const {
   viewSimilarJobs,
   handlePdfUpload,
   chatWithAi,
+  inviteCandidatesForInterview,
 } = require("../controllers/jobController");
 const { upload } = require("../utils/filehelper");
 
@@ -21,6 +22,9 @@ router.route("/fetchJobById/:id").get(isAuthenticatedUser, fetchJobById);
 router.route("/applyForJob").put(isAuthenticatedUser, applyForJob);
 router.route("/shortlist").get(isAuthenticatedUser, shortlist);
 router.route("/viewSimilarJobs").post(isAuthenticatedUser, viewSimilarJobs);
+router
+  .route("/inviteCandidates/:formId")
+  .post(isAuthenticatedUser, inviteCandidatesForInterview);
 router
   .route("/CreateByAi/upload")
   .post(isAuthenticatedUser, upload.array("pdf", 10), handlePdfUpload);

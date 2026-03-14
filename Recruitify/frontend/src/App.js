@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import {
   BrowserRouter as Router,
   Routes,
@@ -27,8 +28,15 @@ import JobsAppliedByMe from "./screens/JobsAppliedByMe";
 import ShortlistedApplicants from "./Jobs/ShortlistedApplicants";
 import Interview from "./Interview/Interview";
 import CreateJobAi from "./Jobs/CreateJobsAi";
+import { profile } from "./features/auth/authActions";
 function App() {
   const [showLogo, setShowLogo] = useState(false);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(profile());
+  }, [dispatch]);
+
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisited");
     if (!hasVisited) {

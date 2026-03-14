@@ -26,11 +26,6 @@ const FormById = () => {
   const navigate = useNavigate();
   const { userInfo } = useSelector((state) => state.auth);
 
-  const skillsList = useSelector((state) => state.skills.skillsList ?? []); // Get skills list
-  const skillsDictionary = skillsList.reduce((acc, skill) => {
-    acc[skill._id] = skill.skill;
-    return acc;
-  }, {});
   useEffect(() => {
     dispatch(fetchAllSkills());
   }, [dispatch]);
@@ -59,6 +54,10 @@ const FormById = () => {
   if (!jobForm._id) {
     return <div>No job form data available.</div>;
   }
+
+  const ownerId = String(jobForm?.ownerProfile?._id || "");
+  const currentUserId = String(userInfo?.user?._id || "");
+  const isOwner = ownerId && currentUserId && ownerId === currentUserId;
 
   const avatarUrl = ``;
 
@@ -123,15 +122,15 @@ const FormById = () => {
             {jobForm.company && <text>({jobForm.company})</text>}
           </span>
 
-          {jobForm.ownerProfile._id === userInfo.user._id && (
+          {isOwner && (
             <div className={styles.interviewSection}>
-              <button onClick={() => navigate("/interview")}>
+              <button onClick={() => navigate(`/interview?jobId=${formId}`)}>
                 Take Interview
               </button>
             </div>
           )}
 
-          {jobForm.ownerProfile._id !== userInfo.user._id && (
+          {!isOwner && (
             <button className={styles.applyButton} onClick={handleApplyForJob}>
               Apply
             </button>
@@ -241,7 +240,7 @@ const FormById = () => {
           )}
         </div>
         <div className={styles.lowerfixed}>
-          {jobForm.ownerProfile._id === userInfo.user._id && (
+          {isOwner && (
             <div className={styles.shortlistSection}>
               {/* <input
             type="number"
@@ -256,14 +255,14 @@ const FormById = () => {
               </button>
             </div>
           )}
-          {jobForm.ownerProfile._id === userInfo.user._id && (
+          {isOwner && (
             <ShortlistModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               onSubmit={shortlistApplication}
             />
           )}
-          {jobForm.ownerProfile._id !== userInfo.user._id && (
+          {!isOwner && (
             <button onClick={handleViewMoreJobs} id="change-btn">
               view similar jobs
             </button>
