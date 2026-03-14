@@ -106,6 +106,9 @@ const authSlice = createSlice({
     [profile.rejected]: (state, { payload }) => {
       state.loading = false;
       state.error = payload;
+      state.userInfo = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem("userInfo");
     },
     [updateProfile.pending]: (state) => {
       state.loading = true;

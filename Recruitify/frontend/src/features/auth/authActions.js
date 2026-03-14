@@ -1,6 +1,5 @@
 import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { useDispatch } from "react-redux";
 axios.defaults.baseURL = process.env.REACT_APP_BACKEND_URL;
 export const userLogin = createAsyncThunk(
   "user/login",
@@ -66,7 +65,7 @@ export const registerUser = createAsyncThunk(
 
 export const logout = createAsyncThunk("user/logout", async (thunkAPI) => {
   try {
-    await axios.get(`/api/v1/logout`);
+    await axios.get(`/api/v1/logout`, { withCredentials: true });
   } catch (error) {
     thunkAPI.dispatch({ payload: error.message });
   }
@@ -74,7 +73,7 @@ export const logout = createAsyncThunk("user/logout", async (thunkAPI) => {
 
 export const profile = createAsyncThunk(
   "user/profile",
-  async (rejectWithValue) => {
+  async (_, { rejectWithValue }) => {
     try {
       const { data } = await axios.get(`/api/v1/me`, {
         withCredentials: true,

@@ -17,6 +17,7 @@ import {
   disconnect,
 } from "../../realtimeCommunication/socketConnection";
 import * as roomHandler from "../../realtimeCommunication/roomHandler";
+import AiHrInterviewButton from "./AiHrInterviewButton";
 
 const MainContainer = styled("div")({
   width: "100%",
@@ -91,6 +92,7 @@ const SideBar = ({ activeRooms, isUserInRoom }) => {
     <MainContainer>
       <RoomButtonContainer>
         <CreateRoomButton isUserInRoom={isUserInRoom} />
+        <AiHrInterviewButton  />
       </RoomButtonContainer>
 
       {activeRooms.map((room) => (

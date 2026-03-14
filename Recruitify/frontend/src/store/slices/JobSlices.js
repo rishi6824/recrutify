@@ -145,6 +145,26 @@ export const viewSimilarJobs = createAsyncThunk(
   }
 );
 
+export const inviteCandidatesForInterview = createAsyncThunk(
+  "jobs/inviteCandidatesForInterview",
+  async ({ formId, interviewLink, message, subject }, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await axios.post(
+        `/api/jobs/inviteCandidates/${formId}`,
+        { interviewLink, message, subject },
+        { withCredentials: true, ...config }
+      );
+
+      return response.data;
+    } catch (exception) {
+      dispatch(
+        openAlertMessage(exception.response?.data?.error || exception.message)
+      );
+      return rejectWithValue(exception.response?.data || exception.message);
+    }
+  }
+);
+
 
 const JobSlice = createSlice({
   name: "jobs",
@@ -243,6 +263,18 @@ const JobSlice = createSlice({
       })
       .addCase(fetchShortlistedApplicants.rejected, (state) => {
         state.isLoading = false;
+      })
+      .addCase(inviteCandidatesForInterview.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(inviteCandidatesForInterview.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.message = `Invited ${action.payload.invitedCount} of ${action.payload.totalCandidates} candidates`;
+      })
+      .addCase(inviteCandidatesForInterview.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.errorMessage = action.payload?.error || "Failed to invite candidates";
       });
   },
 });

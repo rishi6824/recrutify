@@ -4,17 +4,43 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 
 exports.isAuthenticatedUser = catchAsyncErrors(async (req, res, next) => {
-  const { token } = req.cookies;
+  const tokenCookie = req.cookies?.token;
+  const refreshTokenCookie = req.cookies?.refresh_token;
+  const authHeader = req.headers?.authorization;
+  const tokenFromHeader =
+    authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+  // Prefer canonical cookie `token` to avoid identity mismatch with stale legacy cookies.
+  // Fallback to refresh_token/header only when token cookie is not present.
+  const tokenCandidates = tokenCookie
+    ? [tokenCookie]
+    : [refreshTokenCookie, tokenFromHeader].filter(Boolean);
 
-  if (!token) {
-    console.error("" + token + " is not a valid token");
+  if (!tokenCandidates.length) {
     return next(new ErrorHander("Please Login to access this resource", 401));
   }
 
-  const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+  let decodedData = null;
+  for (const token of tokenCandidates) {
+    try {
+      decodedData = jwt.verify(token, process.env.JWT_SECRET);
+      break;
+    } catch (error) {
+      // Try next candidate token (e.g. legacy refresh_token cookie)
+    }
+  }
 
-  req.user = await User.findById(decodedData.id);
-  // console.log(req.user);
+  if (!decodedData) {
+    return next(new ErrorHander("Json Web Token is invalid, Try again ", 400));
+  }
+
+  const user = await User.findById(decodedData.id);
+  if (!user) {
+    return next(new ErrorHander("User not found", 401));
+  }
+
+  req.user = user;
   next();
 });
 

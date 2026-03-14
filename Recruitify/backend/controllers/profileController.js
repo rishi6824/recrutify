@@ -220,35 +220,33 @@ exports.fetchLinks = async (req, res) => {
 };
 exports.uploadResume = async (req, res) => {
   try {
-    console.log("here");
-    // if (!req.files["resume"]) {
-    //   return res.status(400).json({ error: "No file found" });
-    // }
-    // console.log(typeof req.file);
-    // const { originalname, path: filePath, mimetype, size } = req.file;
-
-    // console.log("filename: = " + originalname);
-    // console.log("filepath: = " + filePath);
-    // console.log("filetype: = " + mimetype);
-
+    console.log(
+    "executing files here"
+    )
     const userId = req.user._id;
     const user = await User.findById(userId);
-    // if (!user) {
-    //   return res.status(400).json({ error: "User not found" });
-    // }
 
-    // const newResume = {
-    //   fileName: originalname,
-    //   filePath: filePath,
-    //   fileType: mimetype,
-    //   fileSize: fileSizeFormatter(size, 2),
-    // };
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
 
-    user.resume = await uploadToS3(req.files["resume"][0]);
+    const uploadedFile =
+      req.file || req?.files?.resume?.[0] || req?.files?.file?.[0];
+
+    if (!uploadedFile) {
+      return res.status(400).json({
+        error: "No file found. Use form-data field name 'resume'.",
+      });
+    }
+
+    if (uploadedFile.mimetype !== "application/pdf") {
+      return res.status(400).json({ error: "Only PDF files are allowed" });
+    }
+
+    user.resume = await uploadToS3(uploadedFile);
     await user.save();
 
     res.json(user.resume);
-    // res.json("success");
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });

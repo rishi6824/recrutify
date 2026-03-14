@@ -34,7 +34,10 @@ router
   .route("/uploadResume")
   .post(
     isAuthenticatedUser,
-    upload.fields([{ name: "resume", maxCount: 1 }]),
+    upload.fields([
+      { name: "resume", maxCount: 1 },
+      { name: "file", maxCount: 1 },
+    ]),
     uploadResume
   );
 router.route("/fetchResume").get(isAuthenticatedUser, fetchResume);
